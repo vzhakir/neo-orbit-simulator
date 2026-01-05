@@ -5,7 +5,7 @@
 
 import numpy as np
 
-def rk4_step(r, v, accel_func, dt):
+def rk4_step(r, v, t, accel_func, dt):
     """
     perform a single runge-kutta 4th order step.
     param:
@@ -27,16 +27,16 @@ def rk4_step(r, v, accel_func, dt):
     k1_v = accel_func(v)
 
     k2_r = v+0.5*dt*k1_v
-    k2_v = accel_func(r+0.5*dt*k1_r)
+    k2_v = accel_func(r+0.5*dt*k1_r,t+0.5*dt)
     
     k3_r = v+0.5*dt*k2_v
-    k3_v = accel_func(r+0.5*dt*k2_r)
+    k3_v = accel_func(r+0.5*dt*k2_r,t+ 0.5*dt)
     
     k4_r = v+dt*k3_v
-    k4_v = accel_func(r+dt*k3_r)
+    k4_v = accel_func(r+dt*k3_r,t+dt)
     
-    r_new = r + (dt/6.0)*(k1_r + 2.0*k2_r + 2.0*k3_r + k4_r)
-    v_new = v + (dt/6.0)*(k1_v + 2.0*k2_v + 2.0*k3_v + k4_v)
+    r_new = r + (dt/6.0)*(k1_r+2.0*k2_r+2.0*k3_r+k4_r)
+    v_new = v + (dt/6.0)*(k1_v+2.0*k2_v+2.0*k3_v+k4_v)
     return r_new, v_new
 
 def prop_orbit(r0, v0, accel_func, t_span, dt):
@@ -66,9 +66,19 @@ def prop_orbit(r0, v0, accel_func, t_span, dt):
     positions = []
     velocities = []
     
-    for _ in times:
+    for t in times:
         positions.append(r.copy())
         velocities.append(v.copy())
-        r,v = rk4_step(r,v,accel_func,dt)
+        r,v = rk4_step(r,v,t,accel_func,dt)
     
     return np.array(times), np.array(positions), np.array(velocities)
+
+def calculate_distances(neo_positions, times):
+    """
+    calculate distance between NEO and earth over simulation period.
+    """
+    from .earth import earth_positions
+    
+    e_positions = earth_positions(times) # get earth pos at same times
+    distances = np.linalg.norm(neo_positions - e_positions, axis=1) # euclidean
+    return distances
